@@ -1,30 +1,21 @@
+
+ [build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "clues-by-sam-solver"
-version = "0.1.0"
-description = "Solver for Clues by Sam puzzles"
-authors = [
-    {name = "safina57"}
-]
+name = "cluesBySamGeneration"
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
-dependencies = [
-    "z3-solver (>=4.15.4.0,<5.0.0.0)",
+version = "0.1.0"
+description = "Tools for generating clues by sam puzzles"
+authors = [
+{ name = "Fiona Shyne", email = "shyne.f@northeastern.edu" }
 ]
-
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry]
-package-mode = false
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^9.0.1"
-pre-commit = "^4.5.0"
-black = "^25.11.0"
-flake8 = "^7.3.0"
-poethepoet = "^0.38.0"
-
-[tool.poe.tasks]
-start = "python main.py"
+requires-python = ">=3.8,<4.0"
+license = { file = "LICENSE" }
+classifiers = [
+"Programming Language :: Python :: 3",
+"License :: OSI Approved :: MIT License",
+"Operating System :: OS Independent"
+]
+dependencies = ["z3-solver (>=4.15.4.0,<5.0.0.0)"]
