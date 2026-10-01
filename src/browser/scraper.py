@@ -1,6 +1,6 @@
 from typing import List, Optional
 from playwright.async_api import async_playwright, Page, Browser
-from src.models.game_state import Person, Status
+from src.models.game_state import Entity, Status
 
 
 class GameScraper:
@@ -40,7 +40,7 @@ class GameScraper:
         if self.playwright:
             await self.playwright.stop()
 
-    async def get_grid_state(self) -> List[Person]:
+    async def get_grid_state(self) -> List[Entity]:
         """Scrape the current state of all 20 people."""
         people = []
 
@@ -90,7 +90,7 @@ class GameScraper:
             col = coord[0]
             row = int(coord[1])
 
-            person = Person(
+            person = Entity(
                 id=coord,
                 name=name,
                 profession=profession,

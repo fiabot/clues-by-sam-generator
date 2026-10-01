@@ -1,40 +1,47 @@
 from typing import List, Dict
-from z3 import Solver, Bool, BoolRef, If, Sum, And, Not, Implies, ArithRef
-from src.models.game_state import Person, Status
+from z3 import Solver, Bool, Int, BoolRef, If, Sum, And, Not, Implies, ArithRef
+from src.models.game_state import Entity, GameState
 
 
 class KnowledgeBase:
-    def __init__(self, people: List[Person]):
-        self.people = people
+    def __init__(self,  game: GameState):
+        self.people = game.entities
         self.solver = Solver()
-        self.vars: Dict[str, BoolRef] = {}
-        self.person_map: Dict[str, Person] = {p.name: p for p in people}
+        self.vars: Dict[str, Int] = {}
+        self.person_map: Dict[str, Entity] = {p.name: p for p in self.people}
+        self.game = game 
 
         # Initialize Z3 variables
-        for p in people:
-            self.vars[p.name] = Bool(f"{p.name}_is_criminal")
+        for p in self.people:
+            self.vars[p.name] = Int(f"{p.name}_status")
 
             # Add known status constraints
-            if p.status == Status.CRIMINAL:
-                self.solver.add(self.vars[p.name])
-            elif p.status == Status.INNOCENT:
-                self.solver.add(Not(self.vars[p.name]))
+            if p.status != -1:
+                self.solver.add(self.vars[p.name] == p.status)
+            
+            # ensure that all variables are assigned within range
+            self.solver.add(self.vars[p.name] >= 0)
+            self.solver.add(self.vars[p.name] < len(game.labels))
+            
+           
 
     @property
     def people_names(self) -> List[str]:
         return [p.name for p in self.people]
 
-    def get_var(self, name: str) -> BoolRef:
+    def get_var(self, name: str) -> Int:
         return self.vars[name]
 
     # --- Predicates exposed to LLM ---
+    def in_group(self, name:str, group: List[str]):
+        return name in group 
 
-    def is_criminal(self, name: str) -> BoolRef:
-        return self.vars[name]
+    def is_status(self, name: str, status) -> bool:
+        return self.vars[name] == status
 
-    def is_innocent(self, name: str) -> BoolRef:
-        return Not(self.vars[name])
-
+    def is_state(self, name: str, state) -> bool:
+        return self.person_map[name] == state 
+    
     def is_neighboring(self, name1: str, name2: str) -> bool:
         """Check if two people are neighbors."""
         return name2 in self.get_neighbors(name1)
@@ -52,9 +59,7 @@ class KnowledgeBase:
                 continue
 
             row_diff = abs(p.row - other.row)
-            col_p = ord(p.col) - ord("A")
-            col_o = ord(other.col) - ord("A")
-            col_diff = abs(col_p - col_o)
+            col_diff = abs(p.col - other.col)
 
             if (row_diff == 1 and col_diff == 0) or (row_diff == 0 and col_diff == 1):
                 neighbors.append(other.name)
@@ -66,9 +71,9 @@ class KnowledgeBase:
         n2 = set(self.get_neighbors(name2))
         return list(n1.intersection(n2))
 
-    def is_in_col(self, name: str, col_char: str) -> bool:
+    def is_in_col(self, name: str, col: int) -> bool:
         """Check if person is in a specific column."""
-        return self.person_map[name].col == col_char
+        return self.person_map[name].col == col
 
     def is_in_row(self, name: str, row_num: int) -> bool:
         """Check if person is in a specific row."""
@@ -77,17 +82,18 @@ class KnowledgeBase:
     def get_row(self, row_num: int) -> List[str]:
         return [p.name for p in self.people if p.row == row_num]
 
-    def get_col(self, col_char: str) -> List[str]:
-        return [p.name for p in self.people if p.col == col_char]
+    def get_col(self, col: int) -> List[str]:
+        return [p.name for p in self.people if p.col == col]
 
-    def get_profession(self, prof: str) -> List[str]:
-        return [p.name for p in self.people if p.profession == prof]
+    def get_state(self, state: str) -> List[str]:
+        return [p.name for p in self.people if p.state == state]
 
     def get_corners(self) -> List[str]:
-        return [p.name for p in self.people if p.id in ["A1", "D1", "A5", "D5"]]
+        corners = [[0,0], [0,self.game.width -1], [self.game.height -1, 0], [self.game.height -1 ,self.game.width -1 ]]
+        return [p.name for p in self.people if [p.row, p.col] in corners]
 
     def get_edges(self) -> List[str]:
-        return [p.name for p in self.people if p.row in [1, 5] or p.col in ["A", "D"]]
+        return [p.name for p in self.people if p.row in [0, self.game.height -1] or p.col in [0, self.game.width -1]]
 
     def get_between(self, name1: str, name2: str) -> List[str]:
         """Return names of people strictly between name1 and name2 (same row or col)."""
@@ -96,10 +102,8 @@ class KnowledgeBase:
         between = []
 
         if p1.row == p2.row:
-            # Same row
-            c1 = ord(p1.col)
-            c2 = ord(p2.col)
-            start, end = min(c1, c2), max(c1, c2)
+            # Same ro
+            start, end = min(p1.col, p2.col), max(p1.col, p2.col)
             for p in self.people:
                 if p.row == p1.row and start < ord(p.col) < end:
                     between.append(p.name)
@@ -150,28 +154,27 @@ class KnowledgeBase:
 
     # --- Logic Helpers ---
 
-    def count_criminals(self, names: List[str]) -> ArithRef:
-        return Sum([If(self.is_criminal(n), 1, 0) for n in names])
+    def count_status(self, names: List[str], status) -> ArithRef:
+        return Sum([If(self.is_status(n, status), 1, 0) for n in names])
 
-    def count_innocents(self, names: List[str]) -> ArithRef:
-        return Sum([If(self.is_innocent(n), 1, 0) for n in names])
 
-    def count_profession(self, profession_or_names) -> int:
+
+    def count_state(self, state_or_names) -> int:
         """Count people by profession name or count a list of names."""
-        if isinstance(profession_or_names, str):
+        if isinstance(state_or_names, str):
             # Count by profession name
-            return len(self.get_profession(profession_or_names))
-        elif isinstance(profession_or_names, list):
+            return len(self.get_state(state_or_names))
+        elif isinstance(state_or_names, list):
             # Count list of names
-            return len(profession_or_names)
+            return len(state_or_names)
         else:
-            raise ValueError(f"Invalid argument type: {type(profession_or_names)}")
+            raise ValueError(f"Invalid argument type: {type(state_or_names)}")
 
     def is_above(self, name1: str, name2: str) -> bool:
         """Is name1 above name2"""
         p1 = self.person_map[name1]
         p2 = self.person_map[name2]
-        return p1.col == p2.col and p1.row < p2.row
+        return p1  .col == p2.col and p1.row < p2.row
 
     def is_below(self, name1: str, name2: str) -> bool:
         return self.is_above(name2, name1)
@@ -192,14 +195,17 @@ class KnowledgeBase:
 
     def is_directly_below(self, name1: str, name2: str) -> bool:
         return self.is_directly_above(name2, name1)
-
+                      
     def is_directly_left(self, name1: str, name2: str) -> bool:
         p1 = self.person_map[name1]
         p2 = self.person_map[name2]
-        return p1.row == p2.row and ord(p1.col) == ord(p2.col) - 1
+        return p1.row == p2.row and p1.col == p2.col - 1
 
     def is_directly_right(self, name1: str, name2: str) -> bool:
         return self.is_directly_left(name2, name1)
+    
+    def is_connected_to_group(self, name: str, group: List[str]) -> bool:
+        return True  
 
     def row_connected(self, row_num: int, status_is_criminal: bool) -> BoolRef:
         """

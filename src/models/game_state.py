@@ -3,23 +3,27 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 
-class Status(str, Enum):
-    UNKNOWN = "unknown"
-    INNOCENT = "innocent"
-    CRIMINAL = "criminal"
-
-
-class Person(BaseModel):
-    id: str  # "A1"
+class Entity(BaseModel):
     name: str
-    profession: str
+    state: str
     row: int  # 1-5
-    col: str  # A-D
-    status: Status = Status.UNKNOWN
-    clue: Optional[str] = None  # The clue revealed by this person, if any
+    col: int  # A-D
+    status: int
+    clue: Optional[List] = None  # The clue revealed by this person, if any
+    poss_labels: List[int] 
     neighbors: List[str] = []  # Names of neighboring people
 
 
 class GameState(BaseModel):
-    people: List[Person]
+    labels: List[str]
+    states: List[str]
+    entities: List[Entity]
     active_clues: List[str]
+    width: int 
+    height: int 
+
+    def is_solved(self):
+        for entity in self.entities:
+            if entity.status == -1:
+                return False 
+        return True 
