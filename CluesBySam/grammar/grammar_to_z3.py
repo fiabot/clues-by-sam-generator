@@ -107,7 +107,8 @@ def rule_to_z3(rule,game):
         statement3 = "kb.in_group('{}', {})".format(values[3], group)
         return "And ({}, {}, {})".format(statement1, statement2, statement3) 
     elif kind == "outOf":
-        statement1 = rule_to_z3({"amount": [values[0], values[2], values[4]]}, game)
+        combination_group = {"group":[{"combination":[{"simpleGroup":values[4][0]["group"]}, {"simpleGroup":values[3][0]["group"]}]}]}
+        statement1 = rule_to_z3({"amount": [values[0], values[2], combination_group]}, game)
         statement2 = rule_to_z3({"amount": [values[1], values[2], values[3]]}, game)
         return "And ({}, {})".format(statement1, statement2) 
     elif kind == "conditionAll":

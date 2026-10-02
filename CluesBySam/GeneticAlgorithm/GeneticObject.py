@@ -1,3 +1,9 @@
+import random 
+import sys 
+from pathlib import Path
+sys.path.append(str(Path.cwd().parent.parent)) 
+sys.path.append(str(Path.cwd().parent)) 
+sys.path.append(str(Path.cwd())) 
 from CluesBySam.solver.engine import GameSolver 
 from CluesBySam.models.game_state import GameState , Entity 
 from CluesBySam.grammar.grammar_constructor import generate_rule 
@@ -90,41 +96,54 @@ def get_neighbors(names, row, col):
     return neighbors   
                 
 
-def generate_puzzle(names, states, labels):
+def generate_puzzle(names, states, labels, clues=None, starting_name = None):
     entities = []
     state_set = set()
     for i, row in enumerate(names):
         for j, name in enumerate(row):
+
             state = states[i][j]
             state_set.add(state)
             neighbors = get_neighbors(names, i, j)
-            entities.append(Entity(name=name, state=state, row=i, col=j, status=-1, poss_labels=[0,1], neighbors=neighbors, labels=labels)) 
-
+            if clues == None:
+                entities.append(Entity(name=name, state=state, row=i, col=j, status=-1, poss_labels=[0,1], neighbors=neighbors, labels=labels)) 
+            else:
+                entities.append(Entity(name=name, state=state, row=i, col=j, status=-1, poss_labels=[0,1], neighbors=neighbors, labels=labels,clue=clues[i][j]))
     game = GameState(labels=labels, states=list(state_set),  entities=entities, active_clues=[], width = len(names[0]), height=len(names))
 
-    for entity in entities:
-        clue = generate_rule(game)
-        entity.clue = clue 
-
-    starting_name = random.choice(entities).name
+    if clues == None: 
+        for entity in entities:
+            clue = generate_rule(game)
+            entity.clue = clue 
+    if starting_name == None:
+        starting_name = random.choice(entities).name
 
     return CluesBySam(game, starting_name)
 
 
 if __name__ == "__main__":
 
-    names = [["MissScarlet", "Mr.Green", "Col.Mustard"], 
-            ["Prof.Plum", "Mrs.Peacock", "Mrs.White"]] 
-    states = [["Doctor", "Lawyer", "Painter"],  
-            [ "Lawyer", "Painter", "Teacher"]] 
+    names = [["MissScarlet", "Mr.Green", "Col.Mustard", "LadyLavender"], 
+                            ["Prof.Plum", "Mrs.Peacock", "Mrs.White", "Br.Olive"], 
+                            ["Ms.Indigo", "Dr.Brown", "SirCopper", "Mx.Garnet"]] 
+    states = [["Painter", "Cop", "Cop", "Painter"],  
+                    ["Teacher", "Teacher", "Cook", "Teacher"], 
+                    ["Cook", "Doctor", "Doctor", "Painter"]] 
+    clues = [[ [{'rule': [{'null': []}]}],  [{'rule': [{'null': []}]}],  [{'rule': [{'outOf': [1, 2, 'criminal', {'group': [{'neighbors': ['Mr.Green']}]}, {'group': [{'edge': []}]}]}]}], [{'rule': [{'null': []}]}]]
+             ,[[{'rule': [{'null': []}]}],  [{'rule': [{'null': []}]}],[{'rule': [{'parity': ['odd', 'criminal', {'group': [{'hasState': ['Teacher']}]}]}]}],  [{'rule': [{'null': []}]}] ], 
+             [ [{'rule': [{'null': []}]}],[{'rule': [{'null': []}]}], [{'rule': [{'onlyColumn': [{'column': [2]}, 0, 'criminal']}]}],[{'rule': [{'null': []}]}]]
+             ]
     labels = ["innocent", "criminal"]
 
-    puzzle = generate_puzzle(names, states, labels)
+    puzzle = generate_puzzle(names, states, labels, clues=clues, starting_name="SirCopper")
 
     print("Is Valid: {}".format(puzzle.is_valid))
     print("Is Solved:{}".format(puzzle.is_solved))
     print("Number Rounds: {}".format(puzzle.num_loops()))
     print("Num Nulls:{}".format(puzzle.num_nulls()))
+
+    solver = GameSolver(puzzle.game, 2)
+    solver.solve_puzzle("SirCopper", debug=True)
 
     child = puzzle.mutate()
 

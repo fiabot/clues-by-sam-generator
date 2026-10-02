@@ -28,29 +28,31 @@ class GameSolver:
             self.add_constraint(expression_to_z3(self.kb.person_map[starting_name].clue, self.game))
         rounds = 0 
         while not self.game.is_solved() and is_valid and options_left:
+            if debug:
+                print("Checking for new information")
             new_status = self.solve()
 
             if new_status == -1:
                 is_valid = False 
 
                 if debug:
-                    print("There was a violation")   
+                    print("\tThere was a violation")   
             elif len(new_status) == 0:
                 options_left = False 
 
                 if debug: 
-                    print("There are no more moves left")
+                    print("\tThere are no more moves left")
             if is_valid:
                 for name, status in new_status:
                     person = self.kb.person_map[name]
                     if debug: 
-                        print("{} now has status {}".format(name, status))
+                        print("\t{} now has status {}".format(name, status))
 
                     person.status = status 
                     z3_expression =  expression_to_z3(person.clue, self.game)
                     if z3_expression != "":
                         if debug: 
-                            print("Adding new clue: {}".format(expression_to_english(person.clue)))
+                            print("\tAdding new clue: {}".format(expression_to_english(person.clue)))
                             print(z3_expression)
                         self.add_constraint(z3_expression)
             rounds += 1   
