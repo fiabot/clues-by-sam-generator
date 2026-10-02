@@ -12,8 +12,10 @@ class CluesBySam:
         self.rounds = -1 
         self.starting_name = starting_name 
         self.entity_map = {p.name: p for p in self.game.entities}
+        
         self.solved_game = deepcopy(game)
         self.solve(self.solved_game)
+        self.solved_entity_map = {p.name: p for p in self.solved_game.entities}
         
 
     def solve(self, game_copy: GameState):
@@ -24,13 +26,13 @@ class CluesBySam:
         self.is_valid, self.is_solved, blank_clues, self.rounds = solver.solve_puzzle(self.starting_name) 
         if blank_clues != -1:
             for name, status in blank_clues:
-                self.entity_map[name].clue = [{"rule": [{"null": []}]}]
+                self.solved_entity_map[name].clue = [{"rule": [{"null": []}]}]
         
     
     def has_status(self, name):
-        return self.entity_map[name].status != -1 
+        return self.solved_entity_map[name].status != -1 
 
-    
+
     def num_nulls(self):
         if self.nulls == -1: 
             nulls = 0 
