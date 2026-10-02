@@ -14,8 +14,9 @@ class CluesBySam:
         self.entity_map = {p.name: p for p in self.game.entities}
         
         self.solved_game = deepcopy(game)
-        self.solve(self.solved_game)
         self.solved_entity_map = {p.name: p for p in self.solved_game.entities}
+        self.solve(self.solved_game)
+        
         
 
     def solve(self, game_copy: GameState):
