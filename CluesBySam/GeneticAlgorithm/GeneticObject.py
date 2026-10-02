@@ -27,7 +27,8 @@ class CluesBySam:
         self.is_valid, self.is_solved, blank_clues, self.rounds = solver.solve_puzzle(self.starting_name) 
         if blank_clues != -1:
             for name, status in blank_clues:
-                self.solved_entity_map[name].clue = [{"rule": [{"null": []}]}]
+                if name != self.starting_name:
+                    self.solved_entity_map[name].clue = [{"rule": [{"null": []}]}]
         
     
     def has_status(self, name):
