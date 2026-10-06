@@ -129,9 +129,9 @@ if __name__ == "__main__":
     states = [["Painter", "Cop", "Cop", "Painter"],  
                     ["Teacher", "Teacher", "Cook", "Teacher"], 
                     ["Cook", "Doctor", "Doctor", "Painter"]] 
-    clues = [[ [{'rule': [{'null': []}]}],  [{'rule': [{'null': []}]}],  [{'rule': [{'outOf': [1, 2, 'criminal', {'group': [{'neighbors': ['Mr.Green']}]}, {'group': [{'edge': []}]}]}]}], [{'rule': [{'null': []}]}]]
-             ,[[{'rule': [{'null': []}]}],  [{'rule': [{'null': []}]}],[{'rule': [{'parity': ['odd', 'criminal', {'group': [{'hasState': ['Teacher']}]}]}]}],  [{'rule': [{'null': []}]}] ], 
-             [ [{'rule': [{'null': []}]}],[{'rule': [{'null': []}]}], [{'rule': [{'onlyColumn': [{'column': [2]}, 0, 'criminal']}]}],[{'rule': [{'null': []}]}]]
+    clues = [[  [{'rule': [{'parity': ['even', 'criminal', {'group': [{'combination': [{'simpleGroup': [{'corner': []}]}, {'simpleGroup': [{'edge': []}]}]}]}]}]}],  [{'rule': [{'null': []}]}],  [{'rule': [{'is': ['Mx.Garnet', 'criminal']}]}],  [{'rule': [{'onlyColumn': [{'column': [3]}, 0, 'innocent']}]}] ]
+             ,[ [{'rule': [{'null': []}]}],  [{'rule': [{'null': []}]}], [{'rule': [{'null': []}]}],  [{'rule': [{'null': []}]}]  ], 
+             [[{'rule': [{'is': ['MissScarlet', 'criminal']}]}],  [{'rule': [{'null': []}]}],  [{'rule': [{'null': []}]}] ,  [{'rule': [{'equal': ['innocent', {'group': [{'edge': []}]}, 'criminal', {'group': [{'combination': [{'simpleGroup': [{'corner': []}]}, {'simpleGroup': [{'hasState': ['Cook']}]}]}]}]}]}]]
              ]
     labels = ["innocent", "criminal"]
 
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     print("Num Nulls:{}".format(puzzle.num_nulls()))
 
     solver = GameSolver(puzzle.game, 2)
-    solver.solve_puzzle("SirCopper", debug=True)
+    solver.solve_puzzle("Col.Mustard", debug=True)
 
     child = puzzle.mutate()
 

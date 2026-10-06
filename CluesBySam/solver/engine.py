@@ -27,6 +27,7 @@ class GameSolver:
         if z3_expression != "":
             self.add_constraint(expression_to_z3(self.kb.person_map[starting_name].clue, self.game))
         rounds = 0 
+        new_status = []
         while not self.game.is_solved() and is_valid and options_left:
             if debug:
                 print("Checking for new information")

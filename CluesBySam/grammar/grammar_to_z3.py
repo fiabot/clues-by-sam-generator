@@ -128,7 +128,7 @@ def rule_to_z3(rule,game):
     elif kind == "onlyColumn":
         row = values[0]["column"][0]
         statement1 = "kb.count_status(kb.get_col({}), {}) == {}".format(row, label_to_num(values[2], game), values[1])
-        statement2 = "And([kb.count_status(kb.get_col(r), {}) != {} for r in range(0, {}) if r != {}])".format(label_to_num(values[2], game), values[1],game.height, row )
+        statement2 = "And([kb.count_status(kb.get_col(r), {}) != {} for r in range(0, {}) if r != {}])".format(label_to_num(values[2], game), values[1],game.width , row )
 
         return  "And ({}, {})".format(statement1, statement2)
     elif kind == "moreThan":
